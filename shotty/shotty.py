@@ -27,7 +27,9 @@ def snapshots():
 @snapshots.command('list') #decorator command, allows click to use function
 @click.option('--project', default=None,
     help="Only snapshots for project (tag Project:<name>)")
-def list_snapshots(project):
+@click.option('--all', 'list_all', default=False, is_flag=True,
+    help='List all snapshots for each volume, not just the recent one')
+def list_snapshots(project, list_all):  #if --all is entered as an option, list_all=True
     "List EC2 snapshots"
 
     instances = filter_instances(project)
@@ -43,6 +45,8 @@ def list_snapshots(project):
                     s.progress,
                     s.start_time.strftime("%c")
                 )))
+
+                if s.state == 'completed' and not list_all: break  #shows only most recent snapshots
 
     return
 
