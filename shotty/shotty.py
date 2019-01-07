@@ -4,7 +4,7 @@ import click
 session = boto3.Session(profile_name='shotty')
 ec2 = session.resource('ec2')
 
-def filter_instances(project):
+def filter_instances(project): #function that instantiates instances object by passing in a project tag
     instances = []
 
     if project:
@@ -15,9 +15,79 @@ def filter_instances(project):
 
     return instances
 
-@click.group()
+@click.group() #main group called cli
+def cli():
+    """Shotty manages snapshots""" #triple quotes provides help text
+
+@cli.group('snapshots') #volumes inside cli group
+def snapshots():
+    """Commands for snapshots"""
+
+@snapshots.command('list') #decorator command, allows click to use function
+@click.option('--project', default=None,
+    help="Only snapshots for project (tag Project:<name>)")
+def list_snapshots(project):
+    "List EC2 snapshots"
+
+    instances = filter_instances(project)
+
+    for i in instances:
+        for v in i.volumes.all():
+            for s in v.snapshots.all():
+                print(", ".join((
+                    s.id,
+                    v.id,
+                    i.id,
+                    s.state,
+                    s.progress,
+                    s.start_time.strftime("%c")
+                )))
+
+    return
+
+@cli.group('volumes') #volumes inside cli group
+def volumes():
+    """Commands for volumes"""
+
+@volumes.command('list') #decorator command, allows click to use function
+@click.option('--project', default=None,
+    help="Only volumes for project (tag Project:<name>)")
+def list_volumes(project):
+    "List EC2 volumes"
+
+    instances = filter_instances(project)
+
+    for i in instances:
+        for v in i.volumes.all():
+            print(", ".join((
+                v.id,
+                i.id,
+                v.state,
+                str(v.size) + "GiB",
+                v.encrypted and "Encrytped" or "Not Encrypted"
+            )))
+
+    return
+
+@cli.group() #instances inside cli group
 def instances():
         """Commands for instances"""
+
+@instances.command('snapshot',
+    help='Create snapshots of all volumes')
+@click.option('--project', default=None,
+    help="Only instances for project (tag Project:<name>)")
+def create_snapshots(project):
+    "Create snapshots for EC2 instances"
+
+    instances = filter_instances(project)
+
+    for i in instances:
+        for v in i.volumes.all():
+            print('Creating snapshot of {0}'.format(v.id))
+            v.create_snapshot(Description='Created by spanshot utility')
+
+    return
 
 @instances.command('list') #decorator command, allows click to use function
 @click.option('--project', default=None,
@@ -68,4 +138,4 @@ def start_instances(project):
     return
 
 if __name__ == '__main__':
-    instances()
+    cli()
