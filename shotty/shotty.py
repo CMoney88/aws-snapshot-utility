@@ -16,6 +16,10 @@ def filter_instances(project): #function that instantiates instances object by p
 
     return instances
 
+def has_pending_snapshot(volume):
+    snapshots = list(volume.snapshots.all())
+    return snapshots and snapshots[0].state == 'pending'
+
 @click.group() #main group called cli
 def cli():
     """Shotty manages snapshots""" #triple quotes provides help text
@@ -94,6 +98,9 @@ def create_snapshots(project):
         i.wait_until_stopped()
 
         for v in i.volumes.all():
+            if has_pending_snapshot(v):
+                print("Skipping {0}, snapshot already in progress".format(v.id))
+                continue
             print('Creating snapshot of {0}'.format(v.id))
             v.create_snapshot(Description='Created by aws snapshot utility')
 
