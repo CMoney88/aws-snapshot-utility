@@ -4,7 +4,7 @@ import click
 session = boto3.Session(profile_name='shotty')
 ec2 = session.resource('ec2')
 
-@click.command()
+@click.command() #decorator command, allows click to use function
 def list_instances():
     for i in ec2.instances.all():
         print(', '.join((
