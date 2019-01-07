@@ -1,4 +1,5 @@
 import boto3
+import botocore
 import click
 
 session = boto3.Session(profile_name='shotty')
@@ -149,11 +150,11 @@ def start_instances(project):
 
     for i in instances:
         print('Starting {0}...'.format(i.id))
-            try:
-                i.start()
-            except botocore.exceptions.ClientError as e:
-                print("Could not start {0}. ".format(i.id) + str(e))
-                continue
+        try:
+            i.start()
+        except botocore.exceptions.ClientError as e:
+            print("Could not start {0}. ".format(i.id) + str(e))
+            continue
 
     return
 
